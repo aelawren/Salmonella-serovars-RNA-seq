@@ -1,0 +1,39 @@
+##Generating heatmaps to look at cytokine, chemokine, and antimicrobial peptide expression
+#Load packages
+library(dplyr)
+library(ggplot2)
+
+#Load combined diff expression file
+#Load chemokine cytyokine and AMP gene lists to make heatmaps
+ser_genes<-read.csv('Annotated R scripts serovar paper/significant/ser_significant_atleastone_reformatted.csv')
+cyto_list<-read.csv('Annotated R scripts serovar paper/gene lists/cytokine gene list.csv')
+chemo_list<-read.csv('Annotated R scripts serovar paper/gene lists/chemokine gene list.csv')
+AMP_list<-read.csv('Annotated R scripts serovar paper/gene lists/AMP gene list.csv')
+
+#Subset data with gene lists
+ser_cyto<-subset(ser_genes,ser_genes$symbol%in%cyto_list$symbol)
+ser_chemo<-subset(ser_genes,ser_genes$symbol%in%chemo_list$symbol)
+ser_AMP <- subset(ser_genes,ser_genes$symbol%in%AMP_list$symbol)
+
+
+#set sample order
+#Plot results in heatmap
+#cytokines
+ser_cyto$injection<-factor(ser_cyto$injection,levels=c('STM','SE','ST'))
+ggplot(ser_cyto, aes(injection, reorder(symbol,log2FoldChange))) + geom_tile(aes(fill = log2FoldChange))+ scale_fill_gradient2(low="blue", mid="yellow",high="red",midpoint = 0,limits=c(-4, 11))+
+  facet_grid(cols = vars(time),
+             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+#chemokines
+ser_chemo$injection<-factor(ser_chemo$injection,levels=c('STM','SE','ST'))
+ggplot(ser_chemo, aes(injection, reorder(symbol,log2FoldChange))) + geom_tile(aes(fill = log2FoldChange))+ scale_fill_gradient2(low="blue", mid="yellow",high="red",midpoint = 0,limits=c(-3, 7))+
+  facet_grid(cols = vars(time),
+             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+
+#Antimicrobial Peptides
+ser_AMP$injection<-factor(ser_AMP$injection,levels=c('STM','SE','ST'))
+ggplot(ser_AMP, aes(injection, reorder(symbol,log2FoldChange))) + geom_tile(aes(fill = log2FoldChange))+ scale_fill_gradient2(low="blue", mid="yellow",high="red",midpoint = 0,limits=c(-4, 9))+
+  facet_grid(cols = vars(time),
+             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
