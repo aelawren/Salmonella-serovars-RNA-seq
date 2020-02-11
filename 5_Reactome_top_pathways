@@ -1,0 +1,56 @@
+##Generating plots to look at top pathways from Reactome pathway analysis
+#Load packages
+library(dplyr)
+library(ggplot2)
+
+##load data
+#Reactome dataset
+ser_paths<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/reactome_combined.csv')
+ser_paths$log10pvalue<-(-log10(ser_paths$pvalue))
+#Immune and cell cycle pathways 
+immune_paths<-read.csv('Annotated R scripts serovar paper/gene lists/ser_immune_system_subpathways_all.csv')
+immune_paths_filtered<-read.csv('Annotated R scripts serovar paper/gene lists/ser_immune_system_subpathways_filtered.csv')
+cell_paths<-read.csv('Annotated R scripts serovar paper/gene lists/cell cycle dna repair serovar pathways1.csv')
+cell_paths_filtered<-read.csv('Annotated R scripts serovar paper/gene lists/cell cycle dna repair serovar pathways1 filtered.csv')
+
+#Subset reactome data to get pathways of interest
+immune_ser<-subset(ser_paths,ser_paths$Description%in%immune_paths$Description)
+immune_ser_filtered<-subset(ser_paths,ser_paths$Description%in%immune_paths_filtered$Description)
+cell_ser<-subset(ser_paths,ser_paths$Description%in%cell_paths$Description)
+cell_ser_filtered<-subset(ser_paths,ser_paths$Description%in%cell_paths_filtered$Description)
+
+
+#Add major pathway description
+immune_ser<-right_join(immune_ser,immune_paths)
+immune_ser_filtered<-right_join(immune_ser_filtered,immune_paths_filtered)
+cell_ser<-right_join(cell_ser,cell_paths)
+cell_ser_filtered<-right_join(cell_ser_filtered,cell_paths_filtered)
+
+#join immune and cell cycle pathways together
+paths<-rbind(immune_ser, cell_ser)
+paths_filtered<-rbind(immune_ser_filtered,cell_ser_filtered)
+
+#filter to get only significant pathways
+paths_sig<-filter(paths,pvalue<0.05)
+paths_filtered_sig<-filter(paths_filtered,pvalue<0.05)
+
+##Plot results
+#All pathways
+paths_sig$injection<-factor(paths_sig$injection,levels=c('ST','SE','STM'))
+
+ggplot(paths_sig)+
+  geom_point(aes(x=gene_ratio,y=Description,size=log10pvalue,color=injection,alpha=0.25))+
+  scale_x_continuous(limits=c(-.9,.9),labels=abs)+facet_grid(rows=vars(Major_Pathway),cols=vars(time),
+                                                             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))+
+  geom_vline(xintercept = 0, lty = 2)
+
+
+#Filtered pathway list
+paths_filtered_sig$injection<-factor(paths_filtered_sig$injection,levels=c('ST','SE','STM'))
+
+ggplot(paths_filtered_sig)+
+  geom_point(aes(x=gene_ratio,y=Description,size=log10pvalue,color=injection,alpha=0.25))+
+  scale_x_continuous(limits=c(-.6,.9),labels=abs)+facet_grid(rows=vars(Major_Pathway),cols=vars(time),
+                                                             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))+
+  geom_vline(xintercept = 0, lty = 2)
+
