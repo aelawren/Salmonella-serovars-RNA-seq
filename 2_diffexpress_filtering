@@ -1,0 +1,133 @@
+#Load packages
+library(magrittr)
+library(dplyr)
+library(here)
+
+##Generating diff expression files with significant genes
+#each condition in a separate file
+#List files
+files<-list.files("Annotated R scripts serovar paper/diffexpress/")
+files
+
+#Filter genes so pvalue<0.05 and save as new .csv
+for(i in seq(files)){
+  sample<-gsub('_diffexpress.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts serovar paper/diffexpress/",files[i]))%>%
+    filter(i,pvalue<0.05)
+  out.dir<-('Annotated R scripts serovar paper/significant/')
+  write.csv(input, file = paste0(out.dir,sample,'_significant','.csv'))
+}
+
+
+
+##generate .csv file with list of genes that are significant in at least one condition
+#combine into one dataframe
+gene_filter <- function(d1, d2, d3, d4,d5,d6,
+                        label1, label2, label3, label4,label5,label6,p = 1){
+  
+  # Get list of genes - Must be significant in at least one sample (pooling together all serants or all serovars)
+  genes <- NULL
+  
+  for(i in list(d1, d2, d3,d4,d5,d6)){
+    a <- filter(i, pvalue <= p) %>% 
+      select(symbol)
+    
+    print(paste(nrow(a), 'significant genes'))
+    
+    genes <- rbind(genes, a) %>% 
+      unique()
+  }
+  
+  print(paste(nrow(genes), 'genes significant in at least one sample with p value cutoff at', p))
+  
+  
+  # Get info for each gene from each sample
+  genes1 <- genes
+  
+  for(i in list(d1, d2, d3,d4,d5,d6)){
+    
+    
+    a <- filter(i, symbol %in% genes$symbol) %>% 
+      select(c(symbol, log2FoldChange, pvalue))
+    
+    genes1 <- left_join(genes1, a, by = 'symbol')
+    
+  }
+  colnames(genes1)[2:13] <- c(paste0(label1,'_log2FoldChange'), paste0(label1, '_pvalue'),
+                              paste0(label2,'_log2FoldChange'), paste0(label2, '_pvalue'),
+                              paste0(label3,'_log2FoldChange'), paste0(label3, '_pvalue'),
+                              paste0(label4,'_log2FoldChange'), paste0(label4, '_pvalue'),
+                              paste0(label5,'_log2FoldChange'), paste0(label5, '_pvalue'),
+                              paste0(label6,'_log2FoldChange'), paste0(label6, '_pvalue')
+  )
+  
+  
+  
+  genes1 <- genes1[,c(1,2,4,6,8,10,12,3,5,7,9,11,13)]
+  return(genes1)
+}
+
+# Load samples
+STM_2h<-read.csv('Annotated R scripts serovar paper/diffexpress/STM_2h_over_PBS_2h_diffexpress.csv')
+STM_8h<-read.csv('Annotated R scripts serovar paper/diffexpress/STM_8h_over_PBS_8h_diffexpress.csv')
+SE_2h<-read.csv('Annotated R scripts serovar paper/diffexpress/SE_2h_over_PBS_2h_diffexpress.csv')
+SE_8h<-read.csv('Annotated R scripts serovar paper/diffexpress/SE_8h_over_PBS_8h_diffexpress.csv')
+ST_2h<-read.csv('Annotated R scripts serovar paper/diffexpress/ST_2h_over_PBS_2h_diffexpress.csv')
+ST_8h<-read.csv('Annotated R scripts serovar paper/diffexpress/ST_8h_over_PBS_8h_diffexpress.csv')
+
+ser <- gene_filter(STM_2h, SE_2h, ST_2h,STM_8h,SE_8h,ST_8h, p = 0.05, 
+                   label1 = 'STM_2h', label2 = 'SE_2h', label3 = 'ST_2h',label4='STM_8h',label5 = 'SE_8h',label6 = 'ST_8h')
+head(ser)
+write.csv(ser,file='Annotated R scripts serovar paper/significant/ser_significant_atleastone.csv')
+
+#Reformat and add samples to new dataframe
+STM_2h_sig_genes<-NULL
+STM_2h_sig_genes$symbol<-ser$symbol
+STM_2h_sig_genes$log2FoldChange<-ser$STM_2h_log2FoldChange
+STM_2h_sig_genes<-as.data.frame(STM_2h_sig_genes)
+STM_2h_sig_genes$pvalue<-ser$STM_2h_pvalue
+STM_2h_sig_genes$injection<-c('STM')
+STM_2h_sig_genes$time<-c('2.5hpi')
+
+STM_8h_sig_genes<-NULL
+STM_8h_sig_genes$symbol<-ser$symbol
+STM_8h_sig_genes$log2FoldChange<-ser$STM_8h_log2FoldChange
+STM_8h_sig_genes<-as.data.frame(STM_8h_sig_genes)
+STM_8h_sig_genes$pvalue<-ser$STM_8h_pvalue
+STM_8h_sig_genes$injection<-c('STM')
+STM_8h_sig_genes$time<-c('8hpi')
+
+SE_2h_sig_genes<-NULL
+SE_2h_sig_genes$symbol<-ser$symbol
+SE_2h_sig_genes$log2FoldChange<-ser$SE_2h_log2FoldChange
+SE_2h_sig_genes<-as.data.frame(SE_2h_sig_genes)
+SE_2h_sig_genes$pvalue<-ser$SE_2h_pvalue
+SE_2h_sig_genes$injection<-c('SE')
+SE_2h_sig_genes$time<-c('2.5hpi')
+
+SE_8h_sig_genes<-NULL
+SE_8h_sig_genes$symbol<-ser$symbol
+SE_8h_sig_genes$log2FoldChange<-ser$SE_8h_log2FoldChange
+SE_8h_sig_genes<-as.data.frame(SE_8h_sig_genes)
+SE_8h_sig_genes$pvalue<-ser$SE_8h_pvalue
+SE_8h_sig_genes$injection<-c('SE')
+SE_8h_sig_genes$time<-c('8hpi')
+
+ST_2h_sig_genes<-NULL
+ST_2h_sig_genes$symbol<-ser$symbol
+ST_2h_sig_genes$log2FoldChange<-ser$ST_2h_log2FoldChange
+ST_2h_sig_genes<-as.data.frame(ST_2h_sig_genes)
+ST_2h_sig_genes$pvalue<-ser$ST_2h_pvalue
+ST_2h_sig_genes$injection<-c('ST')
+ST_2h_sig_genes$time<-c('2.5hpi')
+
+ST_8h_sig_genes<-NULL
+ST_8h_sig_genes$symbol<-ser$symbol
+ST_8h_sig_genes$log2FoldChange<-ser$ST_8h_log2FoldChange
+ST_8h_sig_genes<-as.data.frame(ST_8h_sig_genes)
+ST_8h_sig_genes$pvalue<-ser$ST_8h_pvalue
+ST_8h_sig_genes$injection<-c('ST')
+ST_8h_sig_genes$time<-c('8hpi')
+
+sig_genes<-rbind(STM_2h_sig_genes,STM_8h_sig_genes,SE_2h_sig_genes,SE_8h_sig_genes,ST_2h_sig_genes,ST_8h_sig_genes)
+write.csv(sig_genes,'Annotated R scripts serovar paper/significant/ser_significant_atleastone_reformatted.csv')
