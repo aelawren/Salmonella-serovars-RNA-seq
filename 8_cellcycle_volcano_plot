@@ -1,0 +1,68 @@
+#generating volcano plots to look at significant genes in cell cycle pathway
+#Load packages
+library('dplyr')
+library(ggplot2)
+
+###Load samples
+#genes in cell cycle pathway
+cellcycle_all<-read.csv('Annotated R scripts serovar paper/gene lists/cell cycle gene list.csv')
+
+#significant diffexpression files
+STM_2h<-read.csv('Annotated R scripts serovar paper/significant/STM_2h_over_PBS_2h_significant.csv')
+STM_8h<-read.csv('Annotated R scripts serovar paper/significant/STM_8h_over_PBS_8h_significant.csv')
+SE_2h<-read.csv('Annotated R scripts serovar paper/significant/SE_2h_over_PBS_2h_significant.csv')
+SE_8h<-read.csv('Annotated R scripts serovar paper/significant/SE_8h_over_PBS_8h_significant.csv')
+ST_2h<-read.csv('Annotated R scripts serovar paper/significant/ST_2h_over_PBS_2h_significant.csv')
+ST_8h<-read.csv('Annotated R scripts serovar paper/significant/ST_8h_over_PBS_8h_significant.csv')
+
+#Subset diffexpression files to get cell cycle genes
+#calculate -log10pvalue for each gene
+STM_2h_cell <- subset(STM_2h,STM_2h$symbol%in%cellcycle_all$MoleculeName)
+STM_2h_cell$log10pvalue<-(-log10(STM_2h_cell$pvalue))
+STM_8h_cell<-subset(STM_8h,STM_8h$symbol%in%cellcycle_all$MoleculeName)
+STM_8h_cell$log10pvalue<-(-log10(STM_8h_cell$pvalue))
+SE_2h_cell<-subset(SE_2h,SE_2h$symbol%in%cellcycle_all$MoleculeName)
+SE_2h_cell$log10pvalue<-(-log10(SE_2h_cell$pvalue))
+SE_8h_cell<-subset(SE_8h,SE_8h$symbol%in%cellcycle_all$MoleculeName)
+SE_8h_cell$log10pvalue<-(-log10(SE_8h_cell$pvalue))
+ST_2h_cell<-subset(ST_2h,ST_2h$symbol%in%cellcycle_all$MoleculeName)
+ST_2h_cell$log10pvalue<-(-log10(ST_2h_cell$pvalue))
+ST_8h_cell<-subset(ST_8h,ST_8h$symbol%in%cellcycle_all$MoleculeName)
+ST_8h_cell$log10pvalue<-(-log10(ST_8h_cell$pvalue))
+
+#Plot results into volcano plot using ggplot
+s2<-ggplot(STM_2h_cell, aes(x = log2FoldChange, y = log10pvalue))+ geom_point()+
+  xlab('log2foldchange')+ggtitle('STM 2.5hpi cell cycle pathway')+
+  theme(plot.title = element_text(face = "bold"))+ theme(plot.title = element_text(hjust = 0.5),aspect.ratio = .5/1)+xlim(-5,6)+
+  ylim (-1,20)+theme(legend.position = "none")+geom_vline(xintercept = 0, lty = 2)
+s2
+
+s8<-ggplot(STM_8h_cell, aes(x = log2FoldChange, y = log10pvalue))+ geom_point()+
+  xlab('log2foldchange')+ggtitle('STM 8hpi cell cycle pathway')+
+  theme(plot.title = element_text(face = "bold"))+ theme(plot.title = element_text(hjust = 0.5),aspect.ratio = .5/1)+xlim(-2,2)+
+  ylim (-1,20)+theme(legend.position = "none")+geom_vline(xintercept = 0, lty = 2)
+s8
+
+t2<-ggplot(SE_2h_cell, aes(x = log2FoldChange, y = log10pvalue))+ geom_point()+
+  xlab('log2foldchange')+ggtitle('SE 2.5hpi cell cycle pathway')+
+  theme(plot.title = element_text(face = "bold"))+ theme(plot.title = element_text(hjust = 0.5),aspect.ratio = .5/1)+xlim(-5,6)+
+  ylim (-1,20)+theme(legend.position = "none")+geom_vline(xintercept = 0, lty = 2)
+t2
+
+t8<-ggplot(SE_8h_cell, aes(x = log2FoldChange, y = log10pvalue))+ geom_point()+
+  xlab('log2foldchange')+ggtitle('SE 8hpi cell cycle pathway')+
+  theme(plot.title = element_text(face = "bold"))+ theme(plot.title = element_text(hjust = 0.5),aspect.ratio = .5/1)+xlim(-2,2)+
+  ylim (-1,20)+theme(legend.position = "none")+geom_vline(xintercept = 0, lty = 2)
+t8
+
+u2<-ggplot(ST_2h_cell, aes(x = log2FoldChange, y = log10pvalue))+ geom_point()+
+  xlab('log2foldchange')+ggtitle('ST 2.5hpi cell cycle pathway')+
+  theme(plot.title = element_text(face = "bold"))+ theme(plot.title = element_text(hjust = 0.5),aspect.ratio = .5/1)+xlim(-5,6)+
+  ylim (-1,20)+theme(legend.position = "none")+geom_vline(xintercept = 0, lty = 2)
+u2
+
+u8<-ggplot(ST_8h_cell, aes(x = log2FoldChange, y = log10pvalue))+ geom_point()+
+  xlab('log2foldchange')+ggtitle('ST 8hpi cell cycle pathway')+
+  theme(plot.title = element_text(face = "bold"))+ theme(plot.title = element_text(hjust = 0.5),aspect.ratio = .5/1)+xlim(-2,2)+
+  ylim (-1,20)+theme(legend.position = "none")+geom_vline(xintercept = 0, lty = 2)
+u8
