@@ -1,0 +1,157 @@
+#Reactome pathway enrichment analysis using ReactomePA
+#Load packages
+library(dplyr)
+library(ggplot2)
+library(magrittr)
+library(ReactomePA)
+
+#Files to be analyzed
+files<-list.files("Annotated R scripts serovar paper/significant/")
+files
+
+#Pathway enrichment in Reactome with significant upregulated genes
+for(i in seq(files)){
+  sample<-gsub('_significant.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts serovar paper/significant/",files[i]))%>%
+    filter(i,log2FoldChange>0)
+  up.list<-input$entrez
+  x<-enrichPathway(gene=up.list,pvalueCutoff = 1,qvalueCutoff=1, minGSSize=10, maxGSSize=1000,readable = T)
+  head(as.data.frame(x))
+  out.dir<-('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/')
+  write.csv(x, file = paste0(out.dir,sample,'_reactome_upregulated','.csv'))
+}
+
+#Pathway enrichment in Reactome with significant downregulated genes
+for(i in seq(files)){
+  sample<-gsub('_significant.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts serovar paper/significant/",files[i]))%>%
+    filter(i,log2FoldChange<0)
+  up.list<-input$entrez
+  x<-enrichPathway(gene=up.list,pvalueCutoff = 1,qvalueCutoff=1, minGSSize=10, maxGSSize=1000,readable = T)
+  head(as.data.frame(x))
+  out.dir<-('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/')
+  write.csv(x, file = paste0(out.dir,sample,'_reactome_downregulated','.csv'))
+}
+
+#create function to calculate gene ratios
+convertBgRatio<-function(d1){
+  BgRatio<-gsub('/10554','',d1$BgRatio)
+  BgRatio<-as.numeric(BgRatio)
+  d1$BgRatio<-BgRatio
+  Count<-as.numeric(d1$Count)
+  d1$Count<-Count
+  gene_ratio<-Count/BgRatio
+  d1$gene_ratio<-gene_ratio
+  cbind(d1,gene_ratio)
+  
+}
+
+#Load samples
+STM_2h_up<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/STM_2h_over_PBS_2h_reactome_upregulated.csv')
+STM_8h_up<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/STM_8h_over_PBS_8h_reactome_upregulated.csv')
+SE_2h_up<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/SE_2h_over_PBS_2h_reactome_upregulated.csv')
+SE_8h_up<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/SE_8h_over_PBS_8h_reactome_upregulated.csv')
+ST_2h_up<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/ST_2h_over_PBS_2h_reactome_upregulated.csv')
+ST_8h_up<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/ST_8h_over_PBS_8h_reactome_upregulated.csv')
+
+STM_2h_down<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/STM_2h_over_PBS_2h_reactome_downregulated.csv')
+STM_8h_down<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/STM_8h_over_PBS_8h_reactome_downregulated.csv')
+SE_2h_down<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/SE_2h_over_PBS_2h_reactome_downregulated.csv')
+SE_8h_down<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/SE_8h_over_PBS_8h_reactome_downregulated.csv')
+ST_2h_down<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/ST_2h_over_PBS_2h_reactome_downregulated.csv')
+ST_8h_down<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/ST_8h_over_PBS_8h_reactome_downregulated.csv')
+
+#run function to get gene ratios and annotate files with injection, timepoint and direction
+STM_2h_up<-convertBgRatio(STM_2h_up)
+STM_2h_up<-STM_2h_up[,!duplicated(colnames(STM_2h_up))]
+STM_2h_up$injection<-c('STM')
+STM_2h_up$time<-c('2.5hpi')
+STM_2h_up$direction<-c('up')
+write.csv(STM_2h_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/STM_2h_over_PBS_2h_reactome_upregulated.csv')
+
+STM_8h_up<-convertBgRatio(STM_8h_up)
+STM_8h_up<-STM_8h_up[,!duplicated(colnames(STM_8h_up))]
+STM_8h_up$injection<-c('STM')
+STM_8h_up$time<-c('8hpi')
+STM_8h_up$direction<-c('up')
+write.csv(STM_8h_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/STM_8h_over_PBS_8h_reactome_upregulated.csv')
+
+SE_2h_up<-convertBgRatio(SE_2h_up)
+SE_2h_up<-SE_2h_up[,!duplicated(colnames(SE_2h_up))]
+SE_2h_up$injection<-c('SE')
+SE_2h_up$time<-c('2.5hpi')
+SE_2h_up$direction<-c('up')
+write.csv(SE_2h_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/SE_2h_over_PBS_2h_reactome_upregulated.csv')
+
+SE_8h_up<-convertBgRatio(SE_8h_up)
+SE_8h_up<-SE_8h_up[,!duplicated(colnames(SE_8h_up))]
+SE_8h_up$injection<-c('SE')
+SE_8h_up$time<-c('8hpi')
+SE_8h_up$direction<-c('up')
+write.csv(SE_8h_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/SE_8h_over_PBS_8h_reactome_upregulated.csv')
+
+ST_2h_up<-convertBgRatio(ST_2h_up)
+ST_2h_up<-ST_2h_up[,!duplicated(colnames(ST_2h_up))]
+ST_2h_up$injection<-c('ST')
+ST_2h_up$time<-c('2.5hpi')
+ST_2h_up$direction<-c('up')
+write.csv(ST_2h_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/ST_2h_over_PBS_2h_reactome_upregulated.csv')
+
+ST_8h_up<-convertBgRatio(ST_8h_up)
+ST_8h_up<-ST_8h_up[,!duplicated(colnames(ST_8h_up))]
+ST_8h_up$injection<-c('ST')
+ST_8h_up$time<-c('8hpi')
+ST_8h_up$direction<-c('up')
+write.csv(ST_8h_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/upregulated/ST_8h_over_PBS_8h_reactome_upregulated.csv')
+
+STM_2h_down<-convertBgRatio(STM_2h_down)
+STM_2h_down<-STM_2h_down[,!duplicated(colnames(STM_2h_down))]
+STM_2h_down$injection<-c('STM')
+STM_2h_down$time<-c('2.5hpi')
+STM_2h_down$direction<-c('down')
+write.csv(STM_2h_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/STM_2h_over_PBS_2h_reactome_downregulated.csv')
+
+STM_8h_down<-convertBgRatio(STM_8h_down)
+STM_8h_down<-STM_8h_down[,!duplicated(colnames(STM_8h_down))]
+STM_8h_down$injection<-c('STM')
+STM_8h_down$time<-c('8hpi')
+STM_8h_down$direction<-c('down')
+write.csv(STM_8h_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/STM_8h_over_PBS_8h_reactome_downregulated.csv')
+
+SE_2h_down<-convertBgRatio(SE_2h_down)
+SE_2h_down<-SE_2h_down[,!duplicated(colnames(SE_2h_down))]
+SE_2h_down$injection<-c('SE')
+SE_2h_down$time<-c('2.5hpi')
+SE_2h_down$direction<-c('down')
+write.csv(SE_2h_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/SE_2h_over_PBS_2h_reactome_downregulated.csv')
+
+SE_8h_down<-convertBgRatio(SE_8h_down)
+SE_8h_down<-SE_8h_down[,!duplicated(colnames(SE_8h_down))]
+SE_8h_down$injection<-c('SE')
+SE_8h_down$time<-c('8hpi')
+SE_8h_down$direction<-c('down')
+write.csv(SE_8h_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/SE_8h_over_PBS_8h_reactome_downregulated.csv')
+
+ST_2h_down<-convertBgRatio(ST_2h_down)
+ST_2h_down<-ST_2h_down[,!duplicated(colnames(ST_2h_down))]
+ST_2h_down$injection<-c('ST')
+ST_2h_down$time<-c('2.5hpi')
+ST_2h_down$direction<-c('down')
+write.csv(ST_2h_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/ST_2h_over_PBS_2h_reactome_downregulated.csv')
+
+ST_8h_down<-convertBgRatio(ST_8h_down)
+ST_8h_down<-ST_8h_down[,!duplicated(colnames(ST_8h_down))]
+ST_8h_down$injection<-c('ST')
+ST_8h_down$time<-c('8hpi')
+ST_8h_down$direction<-c('down')
+write.csv(ST_8h_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/downregulated/ST_8h_over_PBS_8h_reactome_downregulated.csv')
+
+##combine into single dataframe
+ser_up<-rbind(STM_2h_up,STM_8h_up,SE_2h_up,SE_8h_up,ST_2h_up,ST_8h_up)
+ser_down<-rbind(STM_2h_down,STM_8h_down,SE_2h_down,SE_8h_down,ST_2h_down,ST_8h_down)
+ser_down$gene_ratio<-(-1*ser_down$gene_ratio)
+ser<-rbind(ser_up,ser_down)
+ser$log10pvalue<-(-log10(ser$pvalue))
+write.csv(ser_up,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/reactome_combined_upregulated.csv')
+write.csv(ser_down,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/reactome_combined_downregulated.csv')
+write.csv(ser,'Annotated R scripts serovar paper/results/Reactome pathway enrichment/reactome_combined.csv')
