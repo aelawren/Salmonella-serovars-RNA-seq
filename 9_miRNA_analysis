@@ -1,0 +1,154 @@
+##analyzing miRNA enrichment using gprofiler2
+#load packages
+library('gprofiler2')
+library('dplyr')
+library(ggplot2)
+
+##Generating diff expression files with downregulated genes
+#each condition in a separate file
+#List files
+files<-list.files("Annotated R scripts serovar paper/significant/")
+files
+
+#Filter genes so log2FoldChange<0 and save as new .csv
+for(i in seq(files)){
+  sample<-gsub('_significant.csv','',files[i])
+  input<-read.csv(file=file.path("Annotated R scripts serovar paper/significant/",files[i]))%>%
+    filter(i,log2FoldChange<0)%>%
+    select(symbol)
+  out.dir<-('Annotated R scripts serovar paper/significant/')
+  write.csv(input, file = paste0(out.dir,sample,'_downregulated','.csv'))
+}
+
+##Collect symbols of significantly downregulated genes
+##Run gost function to analyze miRNA species associated with downregulated genes
+#each condition in a separate file
+
+#List files
+files2<-list.files("Annotated R scripts serovar paper/significant/downregulated genes/")
+files2
+
+#Collecting gene symbols and running gost function
+for(i in seq(files2)){
+  sample<-gsub('_downregulated.csv','',files2[i])
+  input<-read.csv(file=file.path("Annotated R scripts serovar paper/significant/downregulated genes/",files2[i]))%>%
+    select(symbol)%>%
+    as.matrix(input)%>%
+    gost(organism = 'hsapiens',user_threshold = 1)
+  output<-as.data.frame(input[['result']])
+  final<-filter(output, output$source=='MIRNA')
+  final_mat<-as.matrix(final)
+  out.dir<-('Annotated R scripts serovar paper/results/miRNA analysis/')
+  write.csv(final_mat,file = paste0(out.dir,sample,'_miRNA','.csv'))
+  }
+
+
+##generate .csv file with list of miRNAs that are significant in at least one condition
+#combine into one dataframe
+miRNA_filter <- function(d1, d2, d3, d4,d5,d6,
+                        label1, label2, label3, label4,label5,label6,p = 1){
+  
+  # Get list of miRNAs - Must be significant in at least one sample (pooling together all samples)
+  miRNA <- NULL
+  
+  for(i in list(d1, d2, d3,d4,d5,d6)){
+    a <- filter(i, p_value <= p) %>% 
+      select(term_name)
+    
+    miRNA <- rbind(miRNA, a) %>% 
+      unique()
+  }
+  
+  # Get info for each miRNA from each sample
+  miRNA1 <- miRNA
+  
+  for(i in list(d1, d2, d3,d4,d5,d6)){
+    
+    a <- filter(i, term_id %in% miRNA$term_name) %>% 
+      select(c(term_name))
+    
+    miRNA1 <- left_join(miRNA1, a, by = 'term_name')
+    
+  }
+  
+    return(miRNA1)
+}
+
+###Repeat with just 8h timepoint
+##generate .csv file with list of miRNA that are significant in at least one condition
+#combine into one dataframe
+miRNA_filter_8h <- function(d1, d2, d3, 
+                        label1, label2, label3, p = 1){
+  
+  # Get list of miRNA - Must be significant in at least one sample (pooling together all serants or all serovars)
+  miRNA <- NULL
+  
+  for(i in list(d1, d2, d3)){
+    a <- filter(i, p_value <= p) %>% 
+      select(term_name)
+    
+    miRNA <- rbind(miRNA, a) %>% 
+      unique()
+  }
+  
+  # Get info for each miRNA from each sample
+  miRNA1 <- miRNA
+  
+  for(i in list(d1, d2, d3)){
+    
+    a <- filter(i, term_name %in% miRNA$term_name) %>% 
+      select(c(term_name))
+    
+    miRNA1 <- left_join(miRNA1, a, by = 'term_name')
+    
+  }
+  
+  return(miRNA1)
+}
+
+
+# Load samples
+STM_2h<-read.csv('Annotated R scripts serovar paper/results/miRNA analysis/STM_2h_over_PBS_2h_miRNA.csv')
+STM_8h<-read.csv('Annotated R scripts serovar paper/results/miRNA analysis/STM_8h_over_PBS_8h_miRNA.csv')
+SE_2h<-read.csv('Annotated R scripts serovar paper/results/miRNA analysis/SE_2h_over_PBS_2h_miRNA.csv')
+SE_8h<-read.csv('Annotated R scripts serovar paper/results/miRNA analysis/SE_8h_over_PBS_8h_miRNA.csv')
+ST_2h<-read.csv('Annotated R scripts serovar paper/results/miRNA analysis/ST_2h_over_PBS_2h_miRNA.csv')
+ST_8h<-read.csv('Annotated R scripts serovar paper/results/miRNA analysis/ST_8h_over_PBS_8h_miRNA.csv')
+
+ser <- miRNA_filter(STM_2h, SE_2h, ST_2h,STM_8h,SE_8h,ST_8h, p = 0.05, 
+                   label1 = 'STM_2h', label2 = 'SE_2h', label3 = 'ST_2h',label4='STM_8h',label5 = 'SE_8h',label6 = 'ST_8h')
+head(ser)
+write.csv(ser,file='Annotated R scripts serovar paper/gene lists/miRNA_significant_atleastone.csv')
+
+ser_8h <- miRNA_filter_8h(STM_8h,SE_8h,ST_8h, p = 0.05, 
+                    label1 = 'STM_8h', label2 = 'SE_8h', label3 = 'ST_8h')
+head(ser_8h)
+write.csv(ser_8h,file='Annotated R scripts serovar paper/gene lists/miRNA_significant_atleastone_8hpi.csv')
+
+##Add injection information to miRNA files
+STM_2h$injection<-c('STM')
+SE_2h$injection<-c('SE')
+ST_2h$injection<-c('ST')
+STM_8h$injection<-c('STM')
+SE_8h$injection<-c('SE')
+ST_8h$injection<-c('ST')
+
+##Filter significant miRNAs from data and combine into one dataframe for 8h time point
+miRNA<-read.csv('Annotated R scripts serovar paper/gene lists/miRNA_significant_atleastone_8hpi.csv')
+STM_8h_miRNA <- subset(STM_8h,STM_8h$term_name%in%miRNA$term_name)
+SE_8h_miRNA<-subset(SE_8h,SE_8h$term_name%in%miRNA$term_name)
+ST_8h_miRNA<-subset(ST_8h,ST_8h$term_name%in%miRNA$term_name)
+ser_8h<-rbind(STM_8h_miRNA,SE_8h_miRNA,ST_8h_miRNA)
+
+#Add -log10pvalue to combined data
+ser_8h$log10pvalue<-(-log10(ser_8h$p_value))
+
+###Plot results into bar graph looking at log10pvalue
+#set sample order for plot
+ser_8h$injection<-factor(ser_8h$injection,levels=c('ST','SE','STM'))
+
+#plot bar graph
+p <- ggplot(data=ser_8h, aes(x=reorder(term_name,log10pvalue), y=log10pvalue, fill=injection,scale_x_continuous(labels=abs)))+
+  geom_bar(stat="identity", position=position_dodge2(preserve = 'single'))
+p
+p+coord_flip()
