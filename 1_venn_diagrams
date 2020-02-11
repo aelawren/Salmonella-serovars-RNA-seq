@@ -1,0 +1,100 @@
+# Making venn diagrams with the eulerr package
+# Should make area proportional venn diagrams from lists or a matrix
+
+# Libraries and directories
+library(dplyr)
+library(eulerr)
+library(here)
+library(magrittr)
+library(tidyr)
+
+#read data:
+STM_2h<-read.csv('diff_expression/STM_2h_over_PBS_2h_diffexpress.csv')
+STM_8h<-read.csv('diff_expression/STM_8h_over_PBS_8h_diffexpress.csv')
+SE_2h<-read.csv('diff_expression/SE_2h_over_PBS_2h_diffexpress.csv')
+SE_8h<-read.csv('diff_expression/SE_8h_over_PBS_8h_diffexpress.csv')
+ST_2h<-read.csv('diff_expression/ST_2h_over_PBS_2h_diffexpress.csv')
+ST_8h<-read.csv('diff_expression/ST_8h_over_PBS_8h_diffexpress.csv')
+
+STM_2h$label<-c('STM')
+STM_2h$time<-c('2h')
+STM_8h$label<-c('STM')
+STM_8h$time<-c('8h')
+SE_2h$label<-c('SE')
+SE_2h$time<-c('2h')
+SE_8h$label<-c('SE')
+SE_8h$time<-c('8h')
+ST_2h$label<-c('ST')
+ST_2h$time<-c('2h')
+ST_8h$label<-c('ST')
+ST_8h$time<-c('8h')
+
+
+#combine data into one dataframe
+data2<-rbind(STM_2h,STM_8h,SE_2h,SE_8h,ST_2h,ST_8h)
+write.csv(data2,file = 'Annotated R scripts serovar paper/combined_diffexpress_ser.csv')
+
+
+# Function to make venn diagrams
+make_venn <- function(df,x1,x2,x3,t, pvalue = 1, l2fc = 0, show_labels = T){
+
+  # Set significance filter
+  df$signif <- ifelse(df$pvalue < pvalue & abs(df$log2FoldChange) > l2fc, 'Significant', 'Non significant')
+  
+  # want to compare all significant genes
+incr <- filter(df, signif == 'Significant' & time == t) %>% 
+  select(c(symbol,label)) %>% 
+  arrange(label)
+
+
+# Split into three groups by sample
+a <- filter(incr, label == x1) %>% 
+  .$symbol
+b <- filter(incr, label == x2) %>% 
+  .$symbol
+c <- filter(incr, label == x3) %>% 
+  .$symbol
+  
+# Calculate number of shared genes in each group
+ABC <- length(c[c%in%a[a%in%b]])
+AB <- length(a[a%in%b]) - ABC
+AC <- length(a[a%in%c]) - ABC
+A <- length(a) - AB -AC - ABC
+BC <- length(b[b%in%c]) - ABC
+BA <- length(b[b%in%a]) - ABC
+B <- length(b)-BA-BC-ABC
+C <- length(c)-AC-BC-ABC
+
+
+# Formatting options
+eulerr_options(pointsize = 14)
+options(digits = 4)
+
+
+# Input in the form of a named numeric vector
+fit1 <- euler(c("A" = A, "B" = B, "C" = C,
+                "A&B" = AB, "A&C" = AC, "B&C" = BC,
+                "A&B&C" = ABC))
+
+diagram <- plot(fit1, 
+             quantities = T,
+             fill = c("lightblue", "lightcoral", "lemonchiffon"),
+             lty = 1,
+             labels = if(show_labels == F){
+               F
+             }else{
+               c(x1,x2,x3)})
+return(diagram)
+}
+
+
+# Serovars venn diagrams
+# (leave labels off for better formatting in powerpoint)
+s2 <- make_venn(data2, 'STM','SE','ST','2h', pvalue = 0.05, l2fc = 0,
+                show_labels = F)
+s2
+s8 <- make_venn(data2, 'STM','SE','ST','8h', pvalue = 0.05, l2fc = 0,
+                show_labels = F)
+s8
+
+
