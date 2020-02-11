@@ -1,0 +1,37 @@
+##Generating plots to look at mitochondria related pathways
+#Load packages
+library(dplyr)
+library(ggplot2)
+
+#load data
+mito_paths<-read.csv('Annotated R scripts serovar paper/gene lists/mitochondria pathways list.csv')
+row.names(mito_paths)<-mito_paths$Pathway
+mito_paths_filtered<-read.csv('Annotated R scripts serovar paper/gene lists/mitochondria pathways list filtered.csv')
+row.names(mito_paths_filtered)<-mito_paths_filtered$Pathway
+all_paths<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/reactome_combined.csv')
+all_paths$log10pvalue<-(-log10(all_paths$pvalue))
+
+#filter mitochondria pathways
+mito_paths_ser<-subset(all_paths,all_paths$Description%in%rownames(mito_paths))
+mito_sig_paths<-filter(mito_paths_ser,pvalue<0.05)
+mito_paths_ser_filtered<-subset(all_paths,all_paths$Description%in%rownames(mito_paths_filtered))
+mito_sig_paths_filtered<-filter(mito_paths_ser_filtered,pvalue<0.05)
+
+#plot results (only where significant)
+#all mitochondria pathways
+ggplot(mito_sig_paths)+
+  geom_point(aes(x=gene_ratio,y=Description,size=log10pvalue,color=injection,alpha=0.25))+
+  scale_x_continuous(limits=c(-.6,.6),labels=abs)+facet_grid(cols=vars(time),
+                                                             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))+
+  geom_vline(xintercept = 0, lty = 2)
+
+
+##condensed mitochondria pathway set
+mito_sig_paths_filtered$injection<-factor(mito_sig_paths_filtered$injection,levels=c('ST','SE','STM'))
+palette<-c("#00BA42","#619CFF")
+ggplot(data=subset(mito_sig_paths_filtered,mito_sig_paths_filtered$injection=='STM'|mito_sig_paths_filtered$injection=='SE'))+
+  geom_point(aes(x=gene_ratio,y=Description,size=log10pvalue,color=injection,alpha=0.25))+scale_color_manual(values=(palette))+
+  scale_x_continuous(limits=c(-.6,.6),labels=abs)+facet_grid(cols=vars(time),
+                                                             scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))+
+  geom_vline(xintercept = 0, lty = 2)
+
