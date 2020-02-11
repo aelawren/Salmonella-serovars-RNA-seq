@@ -1,0 +1,28 @@
+#Look at major pathways/major cellular processes from Reactome pathway enrichment results
+#Load packages
+library(ggplot2)
+library(dplyr)
+
+#Load data: .csv files containing number of sub-pathways in major reactome pathways
+#total pathways or filtered so that >=12 sub-pathways per category in at least one condition
+maj.paths<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/major_pathway_ser_total.csv')
+maj.paths_filtered<-read.csv('Annotated R scripts serovar paper/results/Reactome pathway enrichment/major_pathway_ser_filtered.csv')
+
+#set downregulated pathways to negative and set injection order
+maj.paths$num.pathways<-ifelse(maj.paths$direction=='down',-1*maj.paths$num.pathways,maj.paths$num.pathways)
+maj.paths$injection<-factor(maj.paths$injection,levels=c('STM','SE','ST'))
+maj.paths_filtered$num.pathways<-ifelse(maj.paths_filtered$direction=='down',-1*maj.paths_filtered$num.pathways,maj.paths_filtered$num.pathways)
+maj.paths_filtered$injection<-factor(maj.paths_filtered$injection,levels=c('STM','SE','ST'))
+
+
+#plot results
+major_paths_plot<-ggplot(data=maj.paths)+geom_bar(aes(x=reorder(Pathway.,num.pathways),y=num.pathways,fill=direction),width = .75,stat='identity',position='identity')+
+  scale_y_continuous(limits=c(-101,101),labels=abs)+scale_fill_manual("direction", values = c("up" = "red", "down" = "blue"))+coord_flip()+geom_hline(yintercept = 0, lty = 2)
+major_paths_plot+ggtitle("Major Pathways")+theme(plot.title = element_text(hjust = 0.5,face='bold'))+facet_grid(rows = vars(time),cols=vars(injection),
+                                                                                                          scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
+
+#plot filtered results
+major_paths_plot<-ggplot(data=maj.paths_filtered)+geom_bar(aes(x=reorder(Pathway.,num.pathways),y=num.pathways,fill=direction),width = .75,stat='identity',position='identity')+
+  scale_y_continuous(limits=c(-101,101),labels=abs)+scale_fill_manual("direction", values = c("up" = "red", "down" = "blue"))+coord_flip()+geom_hline(yintercept = 0, lty = 2)
+major_paths_plot+ggtitle("Major Pathways")+theme(plot.title = element_text(hjust = 0.5,face='bold'))+facet_grid(rows = vars(time),cols=vars(injection),
+                                                                                                                scale = 'free', space = 'free', labeller = label_wrap_gen(width=10))
